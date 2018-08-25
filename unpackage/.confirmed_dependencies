@@ -1,0 +1,31 @@
+{
+	"index.html": {
+		"refer": [
+			"header.html",
+			"nav.html",
+			"main.html",
+			"banner.html"
+		],
+		"resources": [
+			"header.html"
+		]
+	},
+	"main.html": {
+		"refer": [
+			"main/home.html",
+			"main/list.html",
+			"main/detail.html"
+		],
+		"resources": [
+			"main/home.html"
+		]
+	},
+	"main/home.html": {
+		"refer": [
+			"main/banner.html"
+		],
+		"resources": [
+			"main/banner.html"
+		]
+	}
+}

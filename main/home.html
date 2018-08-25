@@ -1,0 +1,240 @@
+<!doctype html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<link href="../css/mui.min.css" rel="stylesheet" />
+		<link rel="stylesheet" href="../css/swiper.min.css" />
+		<script src="../js/mui.min.js"></script>
+	   	<script src="./modules/rem.js"></script>
+	   	<script src="../js/lib/axios.js"></script>
+	   	<script src="../js/lib/swiper.min.js"></script>
+	   	<script src="../js/lib/vue.min.js"></script>
+	   	<style>
+	   	body {
+	   		background: #e1e1e1;
+	   	}
+   		.swiper-container {
+   			width: 100%;
+   			height: 210.94px;
+   		}
+   		.swiper-wrapper {
+   			height: 100%;
+   		}
+   		.swiper-slide {
+   			height: 100%;
+   		}
+   		.swiper-slide img {
+   			height: 100%;
+   		}
+   		.swiper-pagination-bullet-active {
+   			background: #282828
+   		}
+   		.film-box {
+   			width: 335px;
+   			margin: 18px auto;
+   			background-color: #f9f9f9;
+		    box-shadow: 0.5px 0.5px 1px #a8a8a8;
+   		}
+   		.content {
+   			padding: 13px;
+   			display: flex;
+   			justify-content: space-between;
+   			align-items: center;
+   		}
+   		.title {
+   			font-size: 12px;
+   			color: #333;
+   		}
+   		.scr {
+   			font-size: 12px;
+   			color: #9a9a9a;
+   		}
+   		.rank {
+   			font-size: 18px;
+   			color: #f78360;
+   		}
+   		.time {
+   			font-size: 12px;
+   			color: #f78360;
+   		}
+   		.more-button {
+   			width: 160px;
+		    height: 30px;
+		    border: 1px solid #aaa;
+		    border-radius: 15px;
+		    margin: 10px auto 30px;
+		    text-align: center;
+		    line-height: 30px;
+		    font-size: 12px;
+		    color: #616161;
+		    cursor: pointer;
+   		}
+   	</style>
+	</head>
+
+	<body>
+	<div id="app">
+		<home-banner></home-banner>
+		<home-playing :webview_main="webview_main"></home-playing>
+		<home-comming :webview_main="webview_main"></home-comming>
+	</div>
+	<template id="home-banner">
+			<div class="swiper-container home-banner" ref = "el">
+				<div class="swiper-wrapper">
+					<div class="swiper-slide img-bg" v-for = "item in slides" :key = "item.id">
+						<img width="100%" :src="item.imageUrl" alt="" />
+					</div>
+				</div>
+				<div class="swiper-pagination"></div>
+			</div>
+		</template>
+	<template id="home-playing">
+		<div class="home-playing">
+			<div v-for="item in playing" :key="item.id" class="film-box" @tap="toDetail(item.id)">
+				<img width="100%" :src="item.cover.origin" alt="" />
+				<div class="content">
+					<div class="left">
+						<div class="title">{{ item.name }}</div>
+						<div class="scr">{{ item.cinemaCount }}影院上映 {{ item.watchCount }}人观看</div>
+					</div>
+					<div class="rank">{{ item.grade }}</div>
+				</div>
+			</div>
+			<div @tap="toList" class="more-button">
+				更多热映电影
+			</div>
+		</div>
+	</template>
+	<template id="home-comming">
+		<div class="home-comming">
+			<div @tap="toDetail(item.id)" v-for="item in comming" :key="item.id" class="film-box" >
+				<img width="100%" :src="item.cover.origin" />
+				<div class="content">
+					<div class="left">
+						<div class="title">{{ item.name }}</div>
+					</div>
+					<div class="time">{{ item.premiereAt | time }}上映</div>
+				</div>
+			</div>
+			<div @tap="toList" class="more-button">
+				更多即将上映电影
+			</div>
+		</div>
+	</template>
+	<script type="text/javascript" charset="utf-8">
+		(function ($, window) {
+			$.plusReady(function () {
+				Vue.filter('time',function (value) {
+					let date = new Date(value)
+					let month = date.getMonth() +1
+					let day = date.getDate()
+					return month+ '月' + day + '日'
+				})
+				Vue.component('home-banner', {
+					template: '#home-banner',
+					data () {
+						return {
+							slides: []
+						}
+					},
+					methods: {
+						getSlides () {
+							let __t = Date.now()
+							axios.get('https://m.maizuo.com/v4/api/billboard/home', {
+								params: {
+							      __t
+							    }
+							}).then(res => {
+								this.slides = res.data.data.billboards
+								console.log(JSON.stringify(this.slides))
+								Vue.nextTick(() => {
+									new Swiper(this.$refs.el, {
+										pagination: { el: '.swiper-pagination' },
+										autoplay: { duration: 3000, disableOnInteraction: false },
+										loop: true
+									});
+								})
+							})
+						}
+					},
+					created () {
+						this.getSlides()
+					}
+				})
+				Vue.component('home-playing', {
+					template: '#home-playing',
+					data () {
+						return {
+							playing: []
+						}
+					},
+					mixins: [global_mixin],
+					props: ['webview_main'],
+					methods: {
+						getPlaying () {
+							axios.get('https://m.maizuo.com/v4/api/film/now-playing', {
+								params: {
+									__t: Date.now(),
+									page: 1,
+									count: 5
+								}
+							}).then(res => {
+								this.playing = res.data.data.films
+							})
+						},
+						toList () {
+							mui.fire(this.webview_main, 'main:switchWebview', {id: 'list.html', type: 'now-playing'})
+						}
+					},
+					created () {
+						this.getPlaying()
+					}
+				})
+				Vue.component('home-comming', {
+					template: '#home-comming',
+					data () {
+						return {
+							comming: []
+						}
+					},
+					mixins: [global_mixin],
+					props: ['webview_main'],
+					methods: {
+						getComming () {
+							axios.get('https://m.maizuo.com/v4/api/film/coming-soon', {
+								params: {
+									__t: Date.now(),
+									page: 1,
+									count: 3
+								}
+							}).then(res => {
+								this.comming = res.data.data.films
+							})
+						},
+						toList () {
+							mui.fire(this.webview_main, 'main:switchWebview', {id: 'list.html', type: 'coming-soon'})
+						}
+					},
+					created () {
+						this.getComming()
+					}
+				})
+				new Vue({
+					el: '#app',
+					data: {
+						webview_main: {}
+					},
+					created () {
+						this.webview_main = plus.webview.getWebviewById('main.html')
+					}
+				})
+				
+			})
+		})(mui, window)
+    </script>
+	</body>
+
+</html>

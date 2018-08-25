@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+    <title></title>
+    <script src="../js/mui.min.js"></script>
+    <link href="../css/mui.min.css" rel="stylesheet"/>
+   	<script src="./modules/rem.js"></script>
+   	<script src="../js/lib/vue.min.js"></script>
+   	<script src="../js/lib/axios.js"></script>
+   	<style>
+   		body {
+   			padding: 0 15px;
+   			background: #e1e1e1;
+   		}
+   		.list-tab {
+   			display: flex;
+   			align-items: center;
+   			height: 46px;
+		    border-bottom: solid #fe6e00 1px;
+   		}
+   		.item {
+   			flex:1;
+   			height: 100%;
+   			line-height: 46px;
+   			text-align: center;
+   			border-bottom: 3px solid transparent;
+   		}
+   		.active {
+   			border-bottom-color: #fe6e00;
+   		}
+   		.filmbox {
+   			padding: 20px 0;
+   			display: flex;
+   			align-items: center;
+   			border-bottom: dashed 1px #c9c9c9;
+   		}
+   		.poster-wrap, .content {
+   			height: 84px;
+   		}
+   		.poster-wrap {
+   			margin-right: 10px;
+   			width: 60px;
+   		}
+   		.poster-wrap img {
+   			height: 100%;
+   		}
+   		.content {
+   			flex: 1;
+   			display: flex;
+   			flex-direction: column;
+   			justify-content: space-between;
+   		}
+   		.title-rank {
+   			display: flex;
+   			justify-content: space-between;
+   		}
+   		.title {
+   			font-size: 16px;
+		    line-height: 32px;
+		    color: #000;
+		    overflow: hidden;
+		    text-overflow: ellipsis;
+		    white-space: nowrap;
+   		}
+   		.rank {
+   			font-size: 16px;
+		    line-height: 32px;
+		    color: #fc7103;
+   		}
+   		.mui-icon {
+   			color: #8e8e8e
+   		}
+   		.scr {
+		    color: #8e8e8e;
+		    font-size: 12px;
+		    overflow: hidden;
+		    text-overflow: ellipsis;
+		    white-space: nowrap;
+		    width: 100%;
+   		}
+   		.info {
+		    color: #8e8e8e;
+		    font-size: 12px;
+   		}
+   		.cinema {
+   			margin-right: 30px;
+   		}
+   		.date {
+   			font-size: 12px;
+   			color: #fc7103;
+   		}
+   	</style>
+</head>
+<body>
+	<div id="app">
+		<list-tab :tabs="tabs" :change-active="changeActive" :active-tab="activeTab" ></list-tab>
+		<list :data="data" ></list>
+	</div>
+	<template id="tab">
+		<div class="list-tab">
+			<div @tap="changeActive(tab.content, tab.type)" v-for="tab in tabs" :key="tab.id" class="item" :class="tab.content === activeTab ? 'active' : ''">
+				{{ tab.content }}
+			</div>
+		</div>
+	</template>
+	<template id="list">
+		<div class="list">
+			<div v-for="item in data" :key="item.id" class="filmbox" @tap="toDetail(item.id)">
+				<div class="poster-wrap">
+					<img :src="item.poster.origin" alt="" />
+				</div>
+				<div class="content">
+					<div class="title-rank">
+						<div class="title">{{ item.name }}</div>
+						<div  class="rank">
+							<span v-if="!item.isComingSoon">{{ item.grade }}</span>
+							<i class="mui-icon mui-icon-arrowright"></i>
+						</div>
+					</div>
+					<div class="scr">{{ item.intro }}</div>
+					<div v-if="!item.isComingSoon" class="info">
+						<span class="cinema">{{ item.cinemaCount }} 家上映</span>
+						<span>{{ item.watchCount }} 人购票</span>
+					</div>
+					<div v-else class="date">
+						{{ item.premiereAt | time }}
+					</div>
+				</div>
+			</div>
+		</div>
+	</template>
+	<script type="text/javascript" charset="utf-8">
+		(function ($, window) {
+			Vue.filter('time', (value) => {
+				let date = new Date(value)
+				let month = date.getMonth() + 1
+				let day = date.getDate()
+				let _week = date.getDay()
+				let week = ''
+				switch(_week) {
+					case 1:
+					week = '一'
+					break;
+					case 2:
+					week = '二'
+					break;
+					case 3:
+					week = '三'
+					break;
+					case 4:
+					week = '四'
+					break;
+					case 5:
+					week = '五'
+					break;
+					case 6:
+					week = '六'
+					break;
+					case 0:
+					week = '日'
+					break;
+					default:
+					break
+				}
+				return month + '月' + day + '日上映' + `    ` + '星期' + week
+			})
+			
+			Vue.component('list-tab', {
+				template: '#tab',
+				props: ['tabs', 'changeActive', 'activeTab'],
+				mixins: [global_mixin]
+			})
+			Vue.component('list',{
+				template: '#list',
+				props: ['data'],
+				mixins: [global_mixin]
+			})
+			new Vue({
+				el: '#app',
+				data: {
+					tabs: [
+						{id: 1, content: '正在热映', type: 'now-playing'},
+						{id: 2, content: '即将上映', type: 'coming-soon'},
+						
+					],
+					activeTab: '正在热映',
+					data: [],
+					requestParams: {
+						page: 1,
+						count: 7
+					}
+				},
+				methods: {
+					changeActive (tab='正在热映', type='now-playing') {
+						console.log(111)
+						this.activeTab = tab
+						let url = 'https://m.maizuo.com/v4/api/film/' + type
+						axios.get(url, {
+							params: this.requestParams
+						}).then(res => {
+							this.data = res.data.data.films
+						})
+					}
+				},
+				created () {
+					this.changeActive()
+				},
+				mounted () {
+					window.addEventListener('list:changeType', (e) => {
+						let type = e.detail.type
+						
+						let tab = ''
+						switch (type) {
+							case 'now-playing':
+							tab = '正在热映'
+							break;
+							case 'coming-soon':
+							tab = '即将上映';
+							break;
+							default:
+							tab = '正在热映';
+							type = 'now-playing'
+							break;
+						}console.log(tab,type)
+						this.changeActive(tab, type)
+					})
+				}
+			})
+		})(mui, window)
+    </script>
+</body>
+</html>

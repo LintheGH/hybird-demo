@@ -1,0 +1,134 @@
+<!doctype html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<link href="../css/mui.min.css" rel="stylesheet" />
+		<script src="../js/mui.min.js"></script>
+	   	<script src="./modules/rem.js"></script>
+	   	<script src="../js/lib/axios.js"></script>
+	   	<script src="../js/lib/vue.min.js"></script>
+	   	<style>
+	   		.img-wrap img {
+	   			width: 100%;
+	   		}
+	   		.title {
+	   			margin: 16px auto;
+			    border-left: 16px solid RGB(228, 200, 156);
+			    font-size: 16px;
+			    padding-left: 4px;
+	   		}
+	   		.content-b {
+	   			padding-left: 20px;
+	   			font-size: 12px;
+	   		}
+	   		.content-b div {
+	   			margin-bottom: 8px;
+	   		}
+	   		.buy-btn {
+	   			font-size: 14px;
+			    min-width: 156px;
+			    height: 36px;
+			    line-height: 36px;
+			    border: none;
+			    background-color: #fe8233;
+			    padding: 0;
+			    margin: 0;
+			    border-radius: 18px;
+			    color: #fff;
+			    -webkit-transition: 0.5s ease;
+		        position: fixed;
+			    left: 50%;
+			    bottom: 20px;
+			    transform: translateX(-50%);
+	   		}
+	   	</style>
+	</head>
+
+	<body>
+		<div id="app">
+			<div v-if="info.id"class="detail">
+				<div class="img-wrap">
+					<img :src="info.cover.origin" alt="" />
+				</div>
+				<div class="content">
+					<div class="title">影片介绍</div>
+					<div class="content-b">
+						<div class="director">
+							<span>导&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;演：</span>
+							<span>{{ info.director }}</span>
+						</div>
+						<div class="actor">
+							<span>演&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;员：</span>
+							<i v-for="actor in actors">{{ actor.name }}&nbsp;|&nbsp;</i>
+						</div>
+						<div class="language">
+							<span>地区语言：</span>
+							<span>{{ info.language }}</span>
+						</div>
+						<div class="type">
+							<span>类&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;型：</span>
+							<span>{{ info.category }}</span>
+						</div>
+						<div class="time">
+							<span>上映日期：</span>
+							<span>{{ info.premiereAt | time }}</span>
+						</div>
+						<div class="scr">{{ info.synopsis }}</div>
+						<button class="buy-btn">立即购票</button>
+					</div>
+					
+				</div>
+			</div>
+		</div>
+		<script type="text/javascript">
+			(function ($, window) {
+				mui.init()
+				$.plusReady(function () {
+					Vue.filter('time',function (value) {
+						let date = new Date(value)
+						let month = date.getMonth() +1
+						let day = date.getDate()
+						return month+ '月' + day + '日上映'
+					})
+					new Vue({
+						el: '#app',
+						data: {
+							info: {},
+							actors: [],
+							film_id: null
+						},
+						watch: {
+							film_id: {
+								immediate: true,
+								handler (val, oldval) {
+									this.getInfo(val)
+								}
+							}
+						},
+						methods: {
+							getInfo (film_id) {
+								if (!film_id) return
+								let url = 'https://m.maizuo.com/v4/api/film/' + film_id + '?__t=' + Date.now()
+								axios.get(url).then(res => {
+									this.info = res.data.data.film
+									this.actors = res.data.data.film.actors
+								})
+							}
+						},
+						mounted () {
+							window.addEventListener('detail:getInfo', (e) => {
+								let film_id = e.detail.film_id
+								this.film_id = film_id
+								console.log(this.film_id)
+							})
+						}
+					})
+				})
+			})(mui, window)
+		</script>
+	</body>
+
+</html>
